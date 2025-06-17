@@ -26,8 +26,7 @@ def select_target_device(local_ip):
     """
     devices = discover_hosts(local_ip)
     if not devices:
-        print("❌ No devices found on the network.")
-        return None, None, None
+        raise RuntimeError("No reachable hosts found in the network.")
 
     choices = [
         (f"{device['name']} | IP: {device['ip']} | MAC: {device['mac']}", idx)
@@ -41,6 +40,7 @@ def select_target_device(local_ip):
             choices=choices,
         )
     ]
+    
     answer = inquirer.prompt(questions)
     if answer is None:
         return None, None, None

